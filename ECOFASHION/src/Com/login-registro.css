@@ -1,0 +1,147 @@
+
+.auth-container {
+    min-height: 50vh;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+  }
+  .navbar-brand{
+
+    text-align: center;
+    align-content: center;
+  }
+  
+  .auth-logo {
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+  
+
+  .auth-breadcrumb {
+    padding: 0.75rem 1rem;
+    color: #666;
+    font-size: 0.875rem;
+  }
+  
+  
+  .auth-form-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  
+  .auth-form-wrapper {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  
+  
+  .auth-form {
+    background-color: rgb(43, 41, 41);
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+ 
+  .auth-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    background-color: rgb(255, 255, 255);
+  }
+  
+  .auth-input::placeholder {
+    color: #999;
+  }
+  
+  .auth-input:focus {
+    outline: none;
+    border-color: #666;
+  }
+  
+ 
+  .auth-submit {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: white;
+    color: black;
+    border: none;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .auth-submit:hover {
+    background-color: #f0f0f0;
+  }
+  
+  .auth-submit:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  
+  
+  .auth-toggle-link {
+    display: block;
+    text-align: center;
+    color: white;
+    font-size: 0.875rem;
+    margin-top: 1rem;
+    text-decoration: none;
+  }
+  
+  .auth-toggle-link:hover {
+    text-decoration: underline;
+  }
+  
+ 
+  .auth-error {
+    background-color: #fee2e2;
+    border: 1px solid #ef4444;
+    color: #dc2626;
+    padding: 0.75rem;
+    border-radius: 0.25rem;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+  }
+  
+  
+  .auth-loading-spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    margin-right: 0.5rem;
+    border: 2px solid #000;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+
+  @media (max-width: 640px) {
+    .auth-form {
+      padding: 1.5rem;
+    }
+    
+    .auth-form-wrapper {
+      max-width: 100%;
+    }
+  }
+
