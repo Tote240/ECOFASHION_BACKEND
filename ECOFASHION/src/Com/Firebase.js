@@ -1,9 +1,8 @@
-// firebase.js
-
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth'; 
+import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { getStorage } from 'firebase/storage';
 
-// Configuración de Firebase 
 const firebaseConfig = {
   apiKey: "AIzaSyDr5jb-WrsVE7gEgPLIm3xU3hnHJlegj7s",
   authDomain: "ecofashion-59130.firebaseapp.com",
@@ -14,8 +13,12 @@ const firebaseConfig = {
   measurementId: "G-VJFG2PSEGB"
 };
 
-// Inicializar Firebase
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Inicializar Auth correctamente
-export const auth = getAuth(app); 
+// Initialize services
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
+
+export default app;
