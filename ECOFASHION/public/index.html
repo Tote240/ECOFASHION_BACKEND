@@ -47,4 +47,24 @@
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
   </body>
+
+  <script type="text/javascript">
+    (function(d, t) {
+        var v = d.createElement(t), s = d.getElementsByTagName(t)[0];
+        v.onload = function() {
+          window.voiceflow.chat.load({
+            verify: { projectID: '675122f4cf5e9062101f3cae' },
+            url: 'https://general-runtime.voiceflow.com/',
+            versionID: 'production',
+            style: {
+              backgroundColor: '#000000', // Color de fondo negro
+              color: '#FFFFFF'           // Texto en blanco para contraste
+            }
+          });
+        }
+        v.src = "https://cdn.voiceflow.com/widget/bundle.mjs"; 
+        v.type = "text/javascript"; 
+        s.parentNode.insertBefore(v, s);
+    })(document, 'script');
+  </script>
 </html>

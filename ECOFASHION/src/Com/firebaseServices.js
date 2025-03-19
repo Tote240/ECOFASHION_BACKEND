@@ -1,19 +1,21 @@
-
-import { 
-  collection, 
+// src/firebaseServices.js
+import {
+  collection,
   doc,
   setDoc,
-  updateDoc, 
-  deleteDoc, 
-  getDocs, 
-  getDoc, 
-  query, 
+  updateDoc,
+  deleteDoc,
+  getDocs,
+  getDoc,
+  query,
   where,
-  serverTimestamp 
+  serverTimestamp,
+  increment,
+  addDoc
 } from 'firebase/firestore';
-import { db, auth } from './Firebase';
+import { db } from './Firebase';
 
-// Productos Service
+// Servicios para productos
 export const productosService = {
   // Agregar producto
   async agregarProducto(productoData) {
@@ -54,7 +56,7 @@ export const productosService = {
     }
   },
 
-  // Obtener todos los productos
+  // Obtener productos
   async obtenerProductos() {
     try {
       const querySnapshot = await getDocs(collection(db, 'productos'));
@@ -132,14 +134,10 @@ export const productosService = {
   }
 };
 
-// Carrito Service
+// Servicio para carritos
 export const carritoService = {
   async actualizarCarrito(userId, items) {
     try {
-      if (!auth.currentUser || !userId) {
-        throw new Error('Usuario no autenticado');
-      }
-
       const carritoRef = doc(db, 'carritos', userId);
       const carritoData = {
         userId,
@@ -159,9 +157,7 @@ export const carritoService = {
 
   async obtenerCarrito(userId) {
     try {
-      if (!auth.currentUser || !userId) {
-        return { items: [] };
-      }
+      if (!userId) return { items: [] };
 
       const docRef = doc(db, 'carritos', userId);
       const docSnap = await getDoc(docRef);
@@ -179,11 +175,10 @@ export const carritoService = {
 
   async eliminarCarrito(userId) {
     try {
-      if (!auth.currentUser || !userId) {
-        return;
-      }
-
+      if (!userId) return;
+      
       await deleteDoc(doc(db, 'carritos', userId));
+      console.log('Carrito eliminado exitosamente');
     } catch (error) {
       console.error('Error al eliminar carrito:', error);
       throw error;
@@ -191,6 +186,83 @@ export const carritoService = {
   }
 };
 
+// Servicio para órdenes
+export const ordenesService = {
+  async crearOrden(ordenData) {
+    try {
+      const ordenRef = await addDoc(collection(db, 'ordenes'), {
+        ...ordenData,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      return ordenRef.id;
+    } catch (error) {
+      console.error('Error al crear orden:', error);
+      throw error;
+    }
+  },
+
+  async actualizarEstadoOrden(ordenId, nuevoEstado, detallesTransaccion = null) {
+    try {
+      const ordenRef = doc(db, 'ordenes', ordenId);
+      await updateDoc(ordenRef, {
+        estado: nuevoEstado,
+        detallesTransaccion,
+        updatedAt: serverTimestamp()
+      });
+    } catch (error) {
+      console.error('Error al actualizar estado de orden:', error);
+      throw error;
+    }
+  },
+
+  async obtenerOrdenesUsuario(userId) {
+    try {
+      const q = query(collection(db, 'ordenes'), where('userId', '==', userId));
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    } catch (error) {
+      console.error('Error al obtener órdenes:', error);
+      throw error;
+    }
+  }
+};
+
+// Servicio para actualización de stock
+export const stockService = {
+  async actualizarStock(productoId, cantidad) {
+    try {
+      const productoRef = doc(db, 'productos', productoId);
+      await updateDoc(productoRef, {
+        stock: increment(-cantidad),
+        updatedAt: serverTimestamp()
+      });
+      console.log(`Stock actualizado para producto ${productoId}: -${cantidad}`);
+    } catch (error) {
+      console.error('Error al actualizar stock:', error);
+      throw error;
+    }
+  },
+
+  async restaurarStock(productoId, cantidad) {
+    try {
+      const productoRef = doc(db, 'productos', productoId);
+      await updateDoc(productoRef, {
+        stock: increment(cantidad),
+        updatedAt: serverTimestamp()
+      });
+      console.log(`Stock restaurado para producto ${productoId}: +${cantidad}`);
+    } catch (error) {
+      console.error('Error al restaurar stock:', error);
+      throw error;
+    }
+  }
+};
+
+// Utilidad para verificar si un usuario es administrador
 export const isAdmin = (user) => {
   return user?.email === 'admin@gmail.com';
 };

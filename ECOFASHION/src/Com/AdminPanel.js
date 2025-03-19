@@ -3,12 +3,16 @@ import { productosService } from './firebaseServices';
 import { categoriaService } from './categoriaService';
 import { useNavigate } from 'react-router-dom';
 import { auth } from './Firebase';
+import GestorEnvios from './GestorEnvios';
 
 function AdminPanel() {
+  const [activeTab, setActiveTab] = useState('productos');
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [showRecommended, setShowRecommended] = useState(false);
 
   // Estado para el formulario de nuevo producto
   const [nuevoProducto, setNuevoProducto] = useState({
@@ -115,7 +119,6 @@ function AdminPanel() {
       });
 
       alert('Producto agregado exitosamente');
-
     } catch (err) {
       setError('Error al agregar producto');
       console.error(err);
@@ -158,7 +161,6 @@ function AdminPanel() {
     }
   };
 
-  // Manejar el envío del formulario de edición
   // Manejar el envío del formulario de edición
   const handleEditSubmit = async (e) => {
     e.preventDefault();
@@ -243,40 +245,52 @@ function AdminPanel() {
     }
   };
 
-  if (loading && productos.length === 0) {
-    return (
-      <div className="container py-5">
-        <div className="text-center">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container py-5">
-        <div className="alert alert-danger" role="alert">
-          {error}
-        </div>
-      </div>
-    );
-  }
-
+  // Renderización con pestañas
   return (
     <div className="container mt-5">
       <h1 className="text-center text-dark mb-4">Panel de Administración</h1>
 
-      {/* Formulario para agregar producto */}
-      <div className="card mb-4">
-        <div className="card-header bg-dark text-white">
-          <h2 className="h5 mb-0">Agregar Nuevo Producto</h2>
-        </div>
-        <div className="card-body">
-          <form onSubmit={handleSubmit}>
-            <div className="row g-3">
+      {/* Navegación por pestañas */}
+      <ul className="nav nav-tabs mb-4">
+        <li className="nav-item">
+          <button 
+            className={`nav-link ${activeTab === 'productos' ? 'active' : ''}`}
+            onClick={() => setActiveTab('productos')}
+          >
+            Productos
+          </button>
+        </li>
+        <li className="nav-item">
+          <button 
+            className={`nav-link ${activeTab === 'categorias' ? 'active' : ''}`}
+            onClick={() => setActiveTab('categorias')}
+          >
+            Categorías
+          </button>
+        </li>
+        <li className="nav-item">
+          <button 
+            className={`nav-link ${activeTab === 'envios' ? 'active' : ''}`}
+            onClick={() => setActiveTab('envios')}
+          >
+            Gestión de Envíos
+          </button>
+        </li>
+      </ul>
+
+      {/* Contenido de las pestañas */}
+      <div className="tab-content">
+        {/* Pestaña de Productos */}
+        {activeTab === 'productos' && (
+          <>
+            {/* Formulario de agregar producto */}
+            <div className="card mb-4">
+              <div className="card-header bg-dark text-white">
+                <h2 className="h5 mb-0">Agregar Nuevo Producto</h2>
+              </div>
+              <div className="card-body">
+                <form onSubmit={handleSubmit}>
+                <div className="row g-3">
               <div className="col-md-6">
                 <input
                   type="text"
@@ -408,11 +422,12 @@ function AdminPanel() {
                 </button>
               </div>
             </div>
-          </form>
-        </div>
-      </div>
-
-      {/* Formulario para añadir característica */}
+            
+                  {/* Campos del formulario de producto */}
+                </form>
+              </div>
+            </div>
+             {/* Formulario para añadir característica */}
       <div className="card mb-4">
         <div className="card-header bg-dark text-white">
           <h2 className="h5 mb-0">Añadir Característica</h2>
@@ -439,59 +454,6 @@ function AdminPanel() {
                   {loading ? 'Añadiendo...' : 'Añadir Característica'}
                 </button>
               </div>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      {/* Tabla de categorías */}
-      <div className="card mb-4">
-        <div className="card-header bg-dark text-white">
-          <h2 className="h5 mb-0">Categorías</h2>
-        </div>
-        <div className="card-body">
-          <div className="table-responsive">
-            <table className="table table-hover">
-              <thead className="table-dark">
-                <tr>
-                  <th>Categoría</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categorias.map((categoria) => (
-                  <tr key={categoria}>
-                    <td>{categoria}</td>
-                    <td>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleEliminarCategoria(categoria)}
-                      >
-                        Eliminar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <form onSubmit={handleAddCategoria} className="mt-3">
-            <div className="input-group">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Nueva categoría"
-                value={nuevaCategoria}
-                onChange={(e) => setNuevaCategoria(e.target.value)}
-                required
-              />
-              <button
-                className="btn btn-dark"
-                type="submit"
-                disabled={loading}
-              >
-                {loading ? 'Añadiendo...' : 'Añadir Categoría'}
-              </button>
             </div>
           </form>
         </div>
@@ -667,65 +629,133 @@ function AdminPanel() {
         </div>
       )}
 
-      {/* Tabla de productos */}
-      <div className="card">
-        <div className="card-header bg-dark text-white">
-          <h2 className="h5 mb-0">Inventario de Productos</h2>
-        </div>
-        <div className="card-body">
+            {/* Tabla de productos */}
+            <div className="card">
+  <div className="card-header bg-dark text-white">
+    <h2 className="h5 mb-0">Inventario de Productos</h2>
+  </div>
+  <div className="card-body">
+    <div className="mb-3">
+      <select
+        className="form-select"
+        value={selectedCategory}
+        onChange={(e) => setSelectedCategory(e.target.value)}
+      >
+        <option value="">Todas las categorías</option>
+        {categorias.map((categoria) => (
+          <option key={categoria} value={categoria}>
+            {categoria}
+          </option>
+        ))}
+      </select>
+    </div>
+    <div className="form-check mb-3">
+      <input
+        className="form-check-input"
+        type="checkbox"
+        id="showRecommended"
+        checked={showRecommended}
+        onChange={(e) => setShowRecommended(e.target.checked)}
+      />
+      <label className="form-check-label" htmlFor="showRecommended">
+        Mostrar solo productos recomendados
+      </label>
+    </div>
+    <div className="table-responsive">
+      <table className="table table-hover">
+        <thead className="table-dark">
+          <tr>
+            <th>Imagen</th>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Precio</th>
+            <th>Stock</th>
+            <th>Recomendado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {productos
+            .filter((producto) =>
+              selectedCategory ? producto.categoria === selectedCategory : true
+            )
+            .filter((producto) => (showRecommended ? producto.recomendado : true))
+            .map((producto) => (
+              <tr key={producto.id}>
+                <td>
+                  <img
+                    src={producto.imagen}
+                    alt={producto.nombre}
+                    style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                  />
+                </td>
+                <td>{producto.nombre}</td>
+                <td>{producto.categoria}</td>
+                <td>${producto.precio?.toLocaleString()}</td>
+                <td>
+                  <input
+                    type="number"
+                    className="form-control form-control-sm"
+                    value={producto.stock}
+                    onChange={(e) => handleActualizarStock(producto.id, e.target.value)}
+                    style={{ width: '80px' }}
+                  />
+                </td>
+                <td>
+                  <span className={`badge ${producto.recomendado ? 'bg-success' : 'bg-secondary'}`}>
+                    {producto.recomendado ? 'Sí' : 'No'}
+                  </span>
+                </td>
+                <td>
+                  <button
+                    className="btn btn-primary btn-sm me-2"
+                    onClick={() => {
+                      setSelectedProduct(producto);
+                      setEditMode(true);
+                    }}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => handleEliminar(producto.id)}
+                  >
+                    Eliminar
+                  </button>
+                </td>
+              </tr>
+            ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+          </>
+        )}
+
+        {/* Pestaña de Categorías */}
+        {activeTab === 'categorias' && (
+          <div className="card">
+            <div className="card-header bg-dark text-white">
+              <h2 className="h5 mb-0">Categorías</h2>
+            </div>
+            <div className="card-body">
           <div className="table-responsive">
             <table className="table table-hover">
               <thead className="table-dark">
                 <tr>
-                  <th>Imagen</th>
-                  <th>Nombre</th>
                   <th>Categoría</th>
-                  <th>Precio</th>
-                  <th>Stock</th>
-                  <th>Recomendado</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {productos.map((producto) => (
-                  <tr key={producto.id}>
+                {categorias.map((categoria) => (
+                  <tr key={categoria}>
+                    <td>{categoria}</td>
                     <td>
-                      <img
-                        src={producto.imagen}
-                        alt={producto.nombre}
-                        style={{ width: '50px', height: '50px', objectFit: 'cover' }}
-                      />
-                    </td>
-                    <td>{producto.nombre}</td>
-                    <td>{producto.categoria}</td>
-                    <td>${producto.precio?.toLocaleString()}</td>
-                    <td>
-                      <input
-                        type="number"
-                        className="form-control form-control-sm"
-                        value={producto.stock}
-                        onChange={(e) => handleActualizarStock(producto.id, e.target.value)}
-                        style={{ width: '80px' }}
-                      />
-                    </td>
-                    <td>
-                      <span className={`badge ${producto.recomendado ? 'bg-success' : 'bg-secondary'}`}>
-                        {producto.recomendado ? 'Sí' : 'No'}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        className="btn btn-primary btn-sm me-2"
-                        onClick={() => {
-                          setSelectedProduct(producto);
-                          setEditMode(true);
-                        }}
-                      >
-                        Editar
-                      </button>
                       <button
                         className="btn btn-danger btn-sm"
-                        onClick={() => handleEliminar(producto.id)}
+                        onClick={() => handleEliminarCategoria(categoria)}
                       >
                         Eliminar
                       </button>
@@ -735,7 +765,33 @@ function AdminPanel() {
               </tbody>
             </table>
           </div>
+          <form onSubmit={handleAddCategoria} className="mt-3">
+            <div className="input-group">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Nueva categoría"
+                value={nuevaCategoria}
+                onChange={(e) => setNuevaCategoria(e.target.value)}
+                required
+              />
+              <button
+                className="btn btn-dark"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? 'Añadiendo...' : 'Añadir Categoría'}
+              </button>
+            </div>
+          </form>
         </div>
+          </div>
+        )}
+
+        {/* Pestaña de Envíos */}
+        {activeTab === 'envios' && (
+          <GestorEnvios />
+        )}
       </div>
     </div>
   );

@@ -2,109 +2,110 @@ import React, { useContext, useState } from 'react';
 import { CartContext } from './CartContext';
 import { auth } from './Firebase';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 const CartModal = ({ isOpen, onClose }) => {
-  const { 
-    carrito, 
-    removeFromCart, 
-    updateQuantity, 
-    clearCart, 
+  const {
+    carrito,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
     getTotal,
-    loading 
+    loading
   } = useContext(CartContext);
   
   const [procesando, setProcesando] = useState(false);
   const navigate = useNavigate();
   const total = getTotal();
 
-  // Manejar el proceso de checkout
-  const handleCheckout = async () => {
-    const user = auth.currentUser;
-    if (!user) {
-      localStorage.setItem('redirectAfterLogin', '/checkout');
-      navigate('/login');
-      onClose();
-      return;
-    }
-
-    try {
-      setProcesando(true);
-      
-      
-      // Por ahora solo simularemos una compra exitosa
-      setTimeout(() => {
-        clearCart();
-        alert('¡Compra realizada con éxito!');
-        onClose();
-        setProcesando(false);
-      }, 2000);
-
-    } catch (error) {
-      console.error('Error en el proceso de compra:', error);
-      alert('Hubo un error al procesar tu compra. Por favor, intenta nuevamente.');
-      setProcesando(false);
-    }
-  };
-
   // Eliminar producto
   const handleEliminarProducto = async (productoId) => {
     try {
-      setProcesando(true);
       await removeFromCart(productoId);
     } catch (error) {
       console.error('Error al eliminar producto:', error);
-      alert('Error al eliminar el producto');
-    } finally {
-      setProcesando(false);
-    }
-  };
-
-  // Actualizar cantidad
-  const handleActualizarCantidad = async (productoId, nuevaCantidad) => {
-    try {
-      setProcesando(true);
-      await updateQuantity(productoId, nuevaCantidad);
-    } catch (error) {
-      console.error('Error al actualizar cantidad:', error);
-    } finally {
-      setProcesando(false);
+      Swal.fire({
+        title: 'Error',
+        text: 'No se pudo eliminar el producto',
+        icon: 'error',
+        confirmButtonColor: '#212529'
+      });
     }
   };
 
   // Vaciar carrito
   const handleVaciarCarrito = async () => {
-    if (window.confirm('¿Estás seguro de que quieres vaciar el carrito?')) {
-      try {
-        setProcesando(true);
+    try {
+      const result = await Swal.fire({
+        title: '¿Estás seguro?',
+        text: 'Se eliminarán todos los productos del carrito',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#212529',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, vaciar carrito',
+        cancelButtonText: 'Cancelar'
+      });
+
+      if (result.isConfirmed) {
         await clearCart();
-      } catch (error) {
-        console.error('Error al vaciar carrito:', error);
-        alert('Error al vaciar el carrito');
-      } finally {
-        setProcesando(false);
+        Swal.fire({
+          title: 'Carrito vaciado',
+          text: 'Se han eliminado todos los productos',
+          icon: 'success',
+          confirmButtonColor: '#212529',
+          timer: 1500,
+          showConfirmButton: false
+        });
       }
+    } catch (error) {
+      console.error('Error al vaciar carrito:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'No se pudo vaciar el carrito',
+        icon: 'error',
+        confirmButtonColor: '#212529'
+      });
     }
+  };
+
+  // Proceder al formulario de envío
+  const handleContinuar = () => {
+    if (!auth.currentUser) {
+      Swal.fire({
+        title: 'Iniciar sesión',
+        text: 'Debes iniciar sesión para continuar con la compra',
+        icon: 'info',
+        confirmButtonColor: '#212529'
+      }).then(() => {
+        localStorage.setItem('redirectAfterLogin', '/shipping');
+        navigate('/login');
+        onClose();
+      });
+      return;
+    }
+
+    navigate('/shipping');
+    onClose();
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="position-fixed top-0 start-0 w-100 h-100 bg-black bg-opacity-50" 
+    <div className="position-fixed top-0 start-0 w-100 h-100 bg-black bg-opacity-50"
          style={{ zIndex: 1050 }}>
-      <div className="position-fixed top-0 end-0 h-100 bg-white p-4 shadow" 
+      <div className="position-fixed top-0 end-0 h-100 bg-white p-4 shadow"
            style={{ width: '400px', overflowY: 'auto' }}>
         
-
         <div className="d-flex justify-content-between align-items-center mb-4">
           <h2 className="fs-4 mb-0">Mi Carrito</h2>
-          <button 
-            className="btn-close" 
-            onClick={onClose} 
+          <button
+            className="btn-close"
+            onClick={onClose}
             disabled={procesando}
             aria-label="Cerrar"
           ></button>
         </div>
-
 
         {loading && (
           <div className="text-center py-4">
@@ -114,12 +115,11 @@ const CartModal = ({ isOpen, onClose }) => {
           </div>
         )}
 
-
-        {!loading && carrito.length === 0 && (
+        {!loading && (!carrito || carrito.length === 0) && (
           <div className="text-center py-4">
             <i className="bi bi-cart-x fs-1 text-muted"></i>
             <p className="text-muted mt-2">Tu carrito está vacío</p>
-            <button 
+            <button
               className="btn btn-dark"
               onClick={() => {
                 onClose();
@@ -131,7 +131,7 @@ const CartModal = ({ isOpen, onClose }) => {
           </div>
         )}
 
-        {!loading && carrito.length > 0 && (
+        {!loading && carrito && carrito.length > 0 && (
           <>
             <div className="cart-items mb-4">
               {carrito.map((item) => (
@@ -147,12 +147,14 @@ const CartModal = ({ isOpen, onClose }) => {
                     <div className="col-8">
                       <div className="card-body">
                         <h5 className="card-title fs-6">{item.nombre}</h5>
-                        <p className="card-text fw-bold">${item.precio?.toLocaleString()}</p>
+                        <p className="card-text fw-bold">
+                          ${item.precio?.toLocaleString()}
+                        </p>
                         
                         <div className="d-flex align-items-center gap-2">
                           <button
                             className="btn btn-sm btn-outline-dark"
-                            onClick={() => handleActualizarCantidad(item.id, item.cantidad - 1)}
+                            onClick={() => updateQuantity(item.id, item.cantidad - 1)}
                             disabled={procesando || item.cantidad <= 1}
                           >
                             <i className="bi bi-dash"></i>
@@ -162,7 +164,7 @@ const CartModal = ({ isOpen, onClose }) => {
                           
                           <button
                             className="btn btn-sm btn-outline-dark"
-                            onClick={() => handleActualizarCantidad(item.id, item.cantidad + 1)}
+                            onClick={() => updateQuantity(item.id, item.cantidad + 1)}
                             disabled={procesando}
                           >
                             <i className="bi bi-plus"></i>
@@ -187,22 +189,14 @@ const CartModal = ({ isOpen, onClose }) => {
               ))}
             </div>
 
-
             <div className="border-top pt-3">
-              <div className="d-flex justify-content-between mb-2">
-                <span>Subtotal:</span>
-                <span>${total.toLocaleString()}</span>
-              </div>
-              <div className="d-flex justify-content-between mb-3">
-                <span>Envío:</span>
-                <span>Gratis</span>
-              </div>
               <div className="d-flex justify-content-between mb-4">
                 <span className="fs-5 fw-bold">Total:</span>
-                <span className="fs-5 fw-bold">${total.toLocaleString()}</span>
+                <span className="fs-5 fw-bold">
+                  ${total.toLocaleString()}
+                </span>
               </div>
 
- 
               <div className="d-grid gap-2">
                 <button
                   className="btn btn-danger"
@@ -210,7 +204,9 @@ const CartModal = ({ isOpen, onClose }) => {
                   disabled={procesando}
                 >
                   {procesando ? (
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    <span className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                          aria-hidden="true"></span>
                   ) : (
                     <i className="bi bi-trash me-2"></i>
                   )}
@@ -219,24 +215,25 @@ const CartModal = ({ isOpen, onClose }) => {
                 
                 <button
                   className="btn btn-dark"
-                  onClick={handleCheckout}
-                  disabled={procesando}
+                  onClick={handleContinuar}
+                  disabled={procesando || carrito.length === 0}
                 >
                   {procesando ? (
                     <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      <span className="spinner-border spinner-border-sm me-2"
+                            role="status"
+                            aria-hidden="true"></span>
                       Procesando...
                     </>
                   ) : (
                     <>
-                      <i className="bi bi-credit-card me-2"></i>
-                      Finalizar Compra
+                      <i className="bi bi-arrow-right me-2"></i>
+                      Continuar con el envío
                     </>
                   )}
                 </button>
               </div>
 
-  
               <div className="mt-3">
                 <p className="text-muted small mb-0">
                   <i className="bi bi-shield-check me-1"></i>
@@ -245,6 +242,10 @@ const CartModal = ({ isOpen, onClose }) => {
                 <p className="text-muted small mb-0">
                   <i className="bi bi-truck me-1"></i>
                   Envío gratis en compras sobre $30.000
+                </p>
+                <p className="text-muted small mb-0">
+                  <i className="bi bi-arrow-counterclockwise me-1"></i>
+                  30 días para cambios y devoluciones
                 </p>
               </div>
             </div>

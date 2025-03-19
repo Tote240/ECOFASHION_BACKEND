@@ -1,3 +1,4 @@
+// src/CartContext.js
 import React, { createContext, useState, useEffect } from 'react';
 import { auth } from './Firebase';
 import { carritoService } from './firebaseServices';
@@ -16,7 +17,6 @@ export const CartProvider = ({ children }) => {
     const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
       setUser(currentUser);
       setLoading(true);
-
       try {
         if (currentUser) {
           const carritoData = await carritoService.obtenerCarrito(currentUser.uid);
@@ -32,7 +32,6 @@ export const CartProvider = ({ children }) => {
         setLoading(false);
       }
     });
-
     return () => unsubscribe();
   }, []);
 
@@ -42,7 +41,7 @@ export const CartProvider = ({ children }) => {
       if (!user) {
         Swal.fire({
           title: '¡Necesitas iniciar sesión!',
-          text: 'Para agregar productos al carrito, primero debes iniciar sesión en tu cuenta.',
+          text: 'Para agregar productos al carrito, primero debes iniciar sesión.',
           icon: 'info',
           confirmButtonText: 'Entendido',
           confirmButtonColor: '#212529',
@@ -55,7 +54,7 @@ export const CartProvider = ({ children }) => {
 
       const productoActual = await productosService.obtenerProductoPorId(producto.id);
       const cantidadDeseada = producto.cantidadDeseada || 1;
-      
+
       if (!productoActual) {
         Swal.fire({
           title: 'Error',
@@ -102,7 +101,7 @@ export const CartProvider = ({ children }) => {
 
       setCarrito(nuevoCarrito);
       await carritoService.actualizarCarrito(user.uid, nuevoCarrito);
-      
+
       await productosService.actualizarProducto(producto.id, {
         stock: productoActual.stock - cantidadDeseada
       });
@@ -115,7 +114,6 @@ export const CartProvider = ({ children }) => {
         timer: 1500,
         showConfirmButton: false
       });
-
     } catch (error) {
       Swal.fire({
         title: 'Error',
@@ -139,8 +137,10 @@ export const CartProvider = ({ children }) => {
         return;
       }
 
+      // Obtener el item del carrito antes de eliminarlo
       const itemCarrito = carrito.find(item => item.id === productoId);
       if (itemCarrito) {
+        // Obtener el producto actual y restaurar su stock
         const productoActual = await productosService.obtenerProductoPorId(productoId);
         if (productoActual) {
           await productosService.actualizarProducto(productoId, {
@@ -161,7 +161,6 @@ export const CartProvider = ({ children }) => {
         timer: 1500,
         showConfirmButton: false
       });
-
     } catch (error) {
       Swal.fire({
         title: 'Error',
@@ -234,7 +233,6 @@ export const CartProvider = ({ children }) => {
 
       setCarrito(nuevoCarrito);
       await carritoService.actualizarCarrito(user.uid, nuevoCarrito);
-      
       await productosService.actualizarProducto(productoId, {
         stock: nuevoStock
       });
@@ -247,7 +245,6 @@ export const CartProvider = ({ children }) => {
         timer: 1500,
         showConfirmButton: false
       });
-
     } catch (error) {
       Swal.fire({
         title: 'Error',
@@ -258,28 +255,13 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Limpiar carrito
+  // Limpiar carrito completamente
   const clearCart = async () => {
     try {
-      if (!user) {
-        setCarrito([]);
-        return;
-      }
+      setLoading(true);
 
-      // Confirmar antes de limpiar el carrito
-      const result = await Swal.fire({
-        title: '¿Estás seguro?',
-        text: 'Se eliminarán todos los productos del carrito',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#212529',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Sí, eliminar todo',
-        cancelButtonText: 'Cancelar'
-      });
-
-      if (result.isConfirmed) {
-        // Restaurar stock de todos los productos
+      // Restaurar stock de todos los productos
+      if (user && carrito.length > 0) {
         for (const item of carrito) {
           const productoActual = await productosService.obtenerProductoPorId(item.id);
           if (productoActual) {
@@ -289,26 +271,20 @@ export const CartProvider = ({ children }) => {
           }
         }
 
-        setCarrito([]);
+        // Eliminar el carrito en Firebase
         await carritoService.eliminarCarrito(user.uid);
-
-        Swal.fire({
-          title: '¡Carrito vacío!',
-          text: 'Se eliminaron todos los productos del carrito',
-          icon: 'success',
-          confirmButtonColor: '#212529',
-          timer: 1500,
-          showConfirmButton: false
-        });
       }
 
+      // Limpiar el estado local
+      setCarrito([]);
+      
+      console.log('Carrito limpiado exitosamente');
     } catch (error) {
-      Swal.fire({
-        title: 'Error',
-        text: error.message,
-        icon: 'error',
-        confirmButtonColor: '#212529'
-      });
+      console.error('Error al limpiar carrito:', error);
+      // Intentar limpiar el estado local de todas formas
+      setCarrito([]);
+    } finally {
+      setLoading(false);
     }
   };
 

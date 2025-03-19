@@ -13,6 +13,9 @@ import Login from './Com/Login';
 import Register from './Com/Registro';
 import AdminPanel from './Com/AdminPanel';
 import ContactForm from './Com/Formulario';
+import ConfirmarPago from './Com/ConfirmarPago';
+import ShippingForm from './Com/ShippingForm';
+
 
 
 function App() {
@@ -37,7 +40,9 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/admin" element={<AdminPanel />} /> {/* Ruta de administración */}
             <Route path="/contact" element={<ContactForm />} />
-
+            <Route path="/confirmar-pago" element={<ConfirmarPago />} />
+            <Route path="/shipping" element={<ShippingForm />} />
+        
           </Routes>
           <Pie />
         </div>
